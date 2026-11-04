@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habit &amp; Sleep Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+  <div class="namefield">
+    <label class="label" for="name">Name</label>
+    <input id="name" type="text" placeholder="Type your name" autocomplete="name" spellcheck="false">
+  </div>
+
+  <div class="top">
+    <h1>Habit &amp; Sleep Tracker</h1>
+    <p>Answer the daily question, or tap a box: blue is done, red is missed.</p>
+    <span class="pdfbar"><select id="pdf-kind" aria-label="PDF type"><option value="report">Full report (all data)</option><option value="sheet">One-page month sheet</option></select><button class="ghost" id="pdf-prev" type="button">Preview</button><button class="ghost solid" id="dl" type="button" hidden>Download PDF</button></span>
+  </div>
+
+  <section class="notes" aria-label="Goals and notes">
+    <div class="note"><div class="note-head"><span class="label">Key goals</span><span class="note-btns"><button class="mini" id="note-rem-0" type="button" aria-label="Remove a line from Key goals">&minus;</button><button class="mini" id="note-add-0" type="button" aria-label="Add a line to Key goals">+ Line</button></span></div><textarea id="note-0" aria-label="Key goals" spellcheck="false"></textarea></div>
+    <div class="note"><div class="note-head"><span class="label">Notes</span><span class="note-btns"><button class="mini" id="note-rem-1" type="button" aria-label="Remove a line from Notes">&minus;</button><button class="mini" id="note-add-1" type="button" aria-label="Add a line to Notes">+ Line</button></span></div><textarea id="note-1" aria-label="Notes" spellcheck="false"></textarea></div>
+  </section>
+
+  <section class="sheet" aria-label="Daily habits">
+    <div class="checkin" id="checkin">
+      <div class="ci-top">
+        <button class="ghost" id="ci-prev" type="button" aria-label="Previous day">&lsaquo;</button>
+        <div class="ci-daylabel"><span class="label">Check-in for</span><b id="ci-day">Day 1</b></div>
+        <button class="ghost" id="ci-next" type="button" aria-label="Next day">&rsaquo;</button>
+      </div>
+      <p class="ci-q" id="ci-q" aria-live="polite"></p>
+      <div class="ci-btns" id="ci-btns">
+        <button class="yes" id="ci-yes" type="button" aria-pressed="false">Yes, done</button>
+        <button class="no" id="ci-no" type="button" aria-pressed="false">No, missed</button>
+      </div>
+      <button class="ghost" id="ci-more" type="button" hidden>Answer the rest</button>
+      <div class="ci-foot">
+        <button class="linkbtn" id="ci-back" type="button">Back</button>
+        <span id="ci-prog"></span>
+        <button class="linkbtn" id="ci-skip" type="button">Skip</button>
+      </div>
+    </div>
+    <div class="habitbar">
+      <span class="label" id="hb-count">10 habits</span>
+      <div class="hb-btns">
+        <button class="ghost" id="hb-remove" type="button">Remove last</button>
+        <button class="ghost solid" id="hb-add" type="button">+ Add habit</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="habits">
+        <div class="habits-head label">Daily habits</div>
+        <div class="habit-rows" id="habit-rows"></div>
+      </div>
+      <div class="scroll">
+        <div class="tracker">
+          <svg id="ring" viewBox="0 0 640 660" role="group" aria-label="Circular habit tracker, 31 days by 10 habits"></svg>
+          <div class="center">
+            <span class="label">Month of</span>
+            <input id="month" type="text" aria-label="Month" spellcheck="false">
+            <span class="pct"><b id="pct">0%</b> done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="water" aria-label="Water tracker">
+    <div class="water-title"><h2>WATER TRACKER</h2><span class="stat">average <b id="w-avg">&ndash;</b> per logged day</span></div>
+    <div class="water-body">
+      <div class="water-top">
+        <div class="water-daylabel"><span class="label">Water for</span><span class="daynavrow"><button class="ghost daynav" data-dir="-1" type="button" aria-label="Previous day">&lsaquo;</button><b id="w-day">Day 1</b><button class="ghost daynav" data-dir="1" type="button" aria-label="Next day">&rsaquo;</button></span></div>
+        <label class="water-goal"><span class="label">Goal (L)</span><input id="w-goal" type="number" min="0.5" max="10" step="0.5" inputmode="decimal"></label>
+      </div>
+      <div class="water-total"><b id="w-ml">0L</b><span id="w-sub" aria-live="polite">of 5L</span></div>
+      <div class="water-bar" aria-hidden="true"><i id="w-fill"></i></div>
+      <div class="water-btns">
+        <button class="ghost" id="w-minus" type="button">&minus; 0.5L</button>
+        <button class="ghost" id="w-250" type="button">+ 250ml</button>
+        <button class="ghost" id="w-half" type="button">+ 0.5L</button>
+        <button class="ghost solid" id="w-plus" type="button">+ 1L</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="water" aria-label="Daily step tracker">
+    <div class="water-title"><h2>DAILY STEP TRACKER</h2><span class="stat">average <b id="s-avg">&ndash;</b> &middot; total <b id="s-tot">0k steps</b></span></div>
+    <div class="water-body">
+      <div class="water-top">
+        <div class="water-daylabel"><span class="label">Walk for</span><span class="daynavrow"><button class="ghost daynav" data-dir="-1" type="button" aria-label="Previous day">&lsaquo;</button><b id="s-day">Day 1</b><button class="ghost daynav" data-dir="1" type="button" aria-label="Next day">&rsaquo;</button></span></div>
+        <label class="water-goal"><span class="label">Goal (k steps)</span><input id="s-goal" type="number" min="1" max="60" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="water-total"><b id="s-k">0k steps</b><span id="s-sub" aria-live="polite"></span></div>
+      <div class="water-bar" aria-hidden="true"><i id="s-fill"></i></div>
+      <div class="manual">
+        <label class="label" for="s-input">Add manually (bar updates as you type)</label>
+        <div class="manual-row">
+          <input id="s-input" type="number" min="0" max="200000" step="1" inputmode="numeric" placeholder="Type steps, e.g. 8500">
+        </div>
+        <div class="manual-sub"><button class="linkbtn" id="s-clear" type="button">Clear day</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sleep" aria-label="Sleep tracker">
+    <div class="sleep-title">
+      <h2>SLEEP TRACKER</h2>
+      <span class="stat"><b id="nights">0</b> nights logged &middot; average <b id="avg">&ndash;</b></span>
+    </div>
+    <div class="sleep-scroll"><table id="sleep"></table></div>
+  </section>
+
+  <div class="foot">
+    <p class="hint">Saved in this browser on this device.</p>
+    <button class="ghost" id="clear" type="button">Clear this month</button>
+  </div>
+</div>
+
+<div class="modal" id="pv" hidden>
+  <div class="pv-box" role="dialog" aria-label="PDF preview">
+    <div class="pv-bar"><b>PDF preview</b><span><button class="ghost solid" id="pv-dl" type="button">Download</button><a class="ghost" id="pv-open" target="_blank" rel="noopener">Open in tab</a><button class="ghost" id="pv-x" type="button">Close</button></span></div>
+    <iframe id="pv-frame" title="PDF preview"></iframe>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
