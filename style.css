@@ -105,17 +105,20 @@ button { font: inherit; color: inherit; }
 .habit-row .count { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; padding-right: .5em; }
 
 @container (min-width: 640px) {
-  .habits {
+  .stage:not(.many) .habits {
     position: absolute; left: 17.97%; width: 32.03%; top: 9.39%; height: 26.06%;
-    margin: 0; grid-template-rows: 18fr 154fr; font-size: 1.5cqw; z-index: 2;
+    margin: 0; grid-template-rows: 18fr 154fr; font-size: min(1.5cqw, calc(15cqw / var(--n, 10))); z-index: 2;
   }
-  .habits-head { margin: 0; align-self: center; font-size: 1.6cqw; }
-  .habit-rows { grid-template-rows: repeat(10, 1fr); }
-  .habit-row { min-height: 0; grid-template-columns: 1.8em 1fr; }
-  .habit-row .count { display: none; }
-  .habit-row input { font-size: 1.5cqw; }
-  .ringnum { display: none; }
+  .stage:not(.many) .habits-head { margin: 0; align-self: center; font-size: 1.6cqw; }
+  .stage:not(.many) .habit-rows { grid-template-rows: repeat(var(--n, 10), 1fr); }
+  .stage:not(.many) .habit-row { min-height: 0; grid-template-columns: 1.8em 1fr; }
+  .stage:not(.many) .habit-row .count { display: none; }
+  .stage:not(.many) .habit-row input { font-size: min(1.5cqw, calc(15cqw / var(--n, 10))); }
+  .stage:not(.many) .ringnum { display: none; }
 }
+
+.habitbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin: 0 4px 12px; }
+.hb-btns { display: flex; gap: 8px; }
 
 /* daily check-in */
 .checkin { display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 0 4px 14px; max-width: 460px; align-self: center; width: calc(100% - 8px); margin-inline: auto; }
