@@ -33,6 +33,20 @@
   state.monthKey = monthKey;
   save();
 
+  if (!Array.isArray(state.habits) || !state.habits.length) state.habits = fresh().habits;
+
+  // Ready-made habit names. They fill empty lines and can be renamed like any other habit.
+  var OLD_DEFAULTS = ["Wake up early", "Drink water", "Exercise", "Read", "Meditate", "Eat healthy", "Journal", "Study or learn", "No phone before bed", "Sleep on time"];
+  var DEFAULT_HABITS = ["Wake up 5:00 AM", "Drink water 3L to 4L", "No junk food", "Walk every day 8k to 10k steps", "Daily gym", "Sleep for 6 to 9 hours", "No sugar", "Take a cold shower", "Read a newspaper"];
+  if (state.defaultsV !== 2) {
+    state.habits = state.habits.map(function (h, i) {
+      var name = (h || "").trim();
+      return (!name || name === OLD_DEFAULTS[i]) ? (DEFAULT_HABITS[i] || "") : h;
+    });
+    state.defaultsV = 2;
+    save();
+  }
+
   function pt(rad, a) {
     var t = a * Math.PI / 180;
     return (CX + rad * Math.cos(t)).toFixed(2) + " " + (CY - rad * Math.sin(t)).toFixed(2);
@@ -48,17 +62,8 @@
   svg.appendChild(g);
   var cellEls = {};
   var dayEls = [];
-  for (var k = 0; k < N; k++) {
-    for (var i = 0; i < D; i++) {
-      var el = document.createElementNS(NS, "path");
-      el.setAttribute("d", wedge(k, i));
-      el.setAttribute("class", "cell");
-      el.setAttribute("data-k", k);
-      el.setAttribute("data-i", i);
-      g.appendChild(el);
-      cellEls[k + "-" + i] = el;
-    }
-  }
+  var rows = document.getElementById("habit-rows");
+  var counts = [];
   for (var d = 0; d < D; d++) {
     var a = (90 - (d + 0.5) * DEG) * Math.PI / 180;
     var tx = document.createElementNS(NS, "text");
@@ -69,35 +74,59 @@
     dayEls.push(tx);
     svg.appendChild(tx);
   }
-  for (var n = 0; n < N; n++) {
-    var rn = document.createElementNS(NS, "text");
-    rn.setAttribute("x", CX - 6);
-    rn.setAttribute("y", (CY - (R - (n + 0.5) * T)).toFixed(2));
-    rn.setAttribute("class", "ringnum");
-    rn.textContent = n + 1;
-    svg.appendChild(rn);
-  }
 
-  // habit rows
-  var rows = document.getElementById("habit-rows");
-  var counts = [];
-  for (var h = 0; h < N; h++) {
-    var row = document.createElement("div");
-    row.className = "habit-row";
-    var num = document.createElement("span");
-    num.className = "n"; num.textContent = (h + 1) + ".";
-    var inp = document.createElement("input");
-    inp.type = "text"; inp.id = "habit-" + h; inp.value = state.habits[h] || "";
-    inp.setAttribute("aria-label", "Habit " + (h + 1));
-    inp.placeholder = "Habit " + (h + 1);
-    inp.spellcheck = false;
-    (function (idx) { inp.addEventListener("input", function (e) { state.habits[idx] = e.target.value; save(); ciRender(); }); })(h);
-    var cnt = document.createElement("span");
-    cnt.className = "count";
-    counts.push(cnt);
-    row.appendChild(num); row.appendChild(inp); row.appendChild(cnt);
-    rows.appendChild(row);
+  // Draws the ring, the numbers and the habit rows for however many habits there are.
+  function buildHabits() {
+    N = state.habits.length;
+    T = (R - r) / N;
+    g.textContent = "";
+    cellEls = {};
+    var oldNums = svg.querySelectorAll(".ringnum");
+    for (var o = 0; o < oldNums.length; o++) oldNums[o].remove();
+    for (var k = 0; k < N; k++) {
+      for (var i = 0; i < D; i++) {
+        var el = document.createElementNS(NS, "path");
+        el.setAttribute("d", wedge(k, i));
+        el.setAttribute("class", i >= DIM ? "cell off" : "cell");
+        el.setAttribute("data-k", k);
+        el.setAttribute("data-i", i);
+        g.appendChild(el);
+        cellEls[k + "-" + i] = el;
+      }
+    }
+    var nf = Math.min(13, T * 0.9);
+    for (var n = 0; n < N && nf >= 6; n++) {
+      var rn = document.createElementNS(NS, "text");
+      rn.setAttribute("x", CX - 6);
+      rn.setAttribute("y", (CY - (R - (n + 0.5) * T)).toFixed(2));
+      rn.setAttribute("class", "ringnum");
+      rn.style.fontSize = nf + "px";
+      rn.textContent = n + 1;
+      svg.appendChild(rn);
+    }
+    rows.textContent = "";
+    rows.style.setProperty("--n", N);
+    document.getElementById("stage").classList.toggle("many", N > 12);
+    counts = [];
+    for (var h = 0; h < N; h++) {
+      var row = document.createElement("div");
+      row.className = "habit-row";
+      var num = document.createElement("span");
+      num.className = "n"; num.textContent = (h + 1) + ".";
+      var inp = document.createElement("input");
+      inp.type = "text"; inp.id = "habit-" + h; inp.value = state.habits[h] || "";
+      inp.setAttribute("aria-label", "Habit " + (h + 1));
+      inp.placeholder = "Habit " + (h + 1);
+      inp.spellcheck = false;
+      (function (idx) { inp.addEventListener("input", function (e) { state.habits[idx] = e.target.value; save(); ciRender(); }); })(h);
+      var cnt = document.createElement("span");
+      cnt.className = "count";
+      counts.push(cnt);
+      row.appendChild(num); row.appendChild(inp); row.appendChild(cnt);
+      rows.appendChild(row);
+    }
   }
+  buildHabits();
 
   // sleep table
   var table = document.getElementById("sleep");
@@ -138,6 +167,7 @@
     days.forEach(function (dk) { sum += HVAL[state.sleep[dk]]; });
     nightsEl.textContent = days.length;
     ciRender();
+    hbUpdate();
     avgEl.textContent = days.length ? (sum / days.length).toFixed(1) + " hrs" : "–";
   }
 
@@ -248,6 +278,37 @@
     render();
   });
 
+  /* ---------- Add or remove habits ---------- */
+  var MAXH = 30;
+  var hbAdd = gid("hb-add"), hbRemove = gid("hb-remove"), hbCount = gid("hb-count"), rmArmed = null;
+  function hbUpdate() {
+    hbCount.textContent = N + (N === 1 ? " habit" : " habits") + " (up to " + MAXH + ")";
+    hbAdd.disabled = N >= MAXH;
+    hbRemove.disabled = N <= 1;
+  }
+  function resetRm() { clearTimeout(rmArmed); rmArmed = null; hbRemove.textContent = "Remove last"; hbRemove.classList.remove("warn"); }
+  hbAdd.addEventListener("click", function () {
+    if (N >= MAXH) return;
+    state.habits.push("");
+    buildHabits(); reviewing = false; ciHab = nextOpen(-1);
+    save(); render();
+    var fresh = gid("habit-" + (N - 1)); if (fresh) fresh.focus();
+  });
+  hbRemove.addEventListener("click", function () {
+    if (N <= 1) return;
+    if (!rmArmed) {
+      hbRemove.textContent = "Tap again to remove habit " + N;
+      hbRemove.classList.add("warn");
+      rmArmed = setTimeout(resetRm, 3500);
+      return;
+    }
+    resetRm();
+    for (var rd = 0; rd < D; rd++) delete state.cells[(N - 1) + "-" + rd];
+    state.habits.pop();
+    buildHabits(); reviewing = false; ciHab = nextOpen(-1);
+    save(); render();
+  });
+
   /* ---------- PDF export: one A4 portrait page, drawn as vectors ---------- */
   function clean(s) { return String(s || "").replace(/[^\x20-\xFF\n]/g, ""); }
 
@@ -324,10 +385,33 @@
     doc.setLineWidth(0.5);
     for (var hk = 0; hk <= N; hk++) doc.line(lx, top0 + hk * Tt, cx, top0 + hk * Tt);
     doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
-    for (var hn = 0; hn < N; hn++) {
-      var base = top0 + (hn + 1) * Tt - 3.6;
-      doc.text((hn + 1) + ".", lx + 3, base);
-      doc.text(clean(state.habits[hn]), lx + 17, base);
+    if (N <= 12) {
+      for (var hn = 0; hn < N; hn++) {
+        var base = top0 + (hn + 1) * Tt - 3.6;
+        doc.text((hn + 1) + ".", lx + 3, base);
+        doc.text(clean(state.habits[hn]), lx + 17, base);
+      }
+    } else {
+      // Many habits: two columns of names, plus small ring numbers beside the circle.
+      var per = Math.ceil(N / 2), rh = 134 / per, colW = 102, fs = Math.min(7, rh * 0.78);
+      doc.setFontSize(fs);
+      for (var c2 = 0; c2 < 2; c2++) {
+        var x2 = lx + c2 * (colW + 1);
+        var rowsIn = Math.min(per, N - c2 * per);
+        for (var q2 = 0; q2 <= rowsIn; q2++) doc.line(x2, top0 + q2 * rh, x2 + colW, top0 + q2 * rh);
+        for (var hn2 = c2 * per; hn2 < Math.min(N, (c2 + 1) * per); hn2++) {
+          var b2 = top0 + (hn2 - c2 * per + 1) * rh - rh * 0.25;
+          var nm = clean(state.habits[hn2]);
+          while (nm.length && doc.getTextWidth(nm) > colW - 26) nm = nm.slice(0, -1);
+          doc.text((hn2 + 1) + ".", x2 + 2, b2);
+          doc.text(nm, x2 + 14, b2);
+        }
+      }
+      var rf = Math.min(6, Tt * 0.85);
+      if (rf >= 3.2) {
+        doc.setFontSize(rf);
+        for (var rn2 = 0; rn2 < N; rn2++) doc.text(String(rn2 + 1), cx - 2, top0 + (rn2 + 0.5) * Tt + rf * 0.35, { align: "right" });
+      }
     }
 
     // sleep tracker
@@ -343,61 +427,4 @@
     doc.setLineWidth(0.5);
     for (var rr = 0; rr <= 7; rr++) doc.line(tx0, hy + headH + rr * rowH, tx1, hy + headH + rr * rowH);
     doc.line(tx0, hy, tx1, hy);
-    for (var cc = 0; cc <= 31; cc++) doc.line(tx0 + lw + cc * cw, hy, tx0 + lw + cc * cw, bottom);
-    doc.setLineWidth(1.1);
-    doc.rect(tx0, top, tx1 - tx0, bottom - top, "S");
-    doc.line(tx0 + lw, hy, tx0 + lw, bottom);
-    doc.setFontSize(7.5);
-    doc.text("Hours Slept / Day", tx0 + 6, hy + 12);
-    doc.setFontSize(7);
-    for (var hd = 0; hd < D; hd++) doc.text(String(hd + 1), tx0 + lw + (hd + 0.5) * cw, hy + 12, { align: "center" });
-    doc.setFontSize(8);
-    for (var hr = 0; hr < HOURS.length; hr++) doc.text(HOURS[hr], tx0 + 8, hy + headH + hr * rowH + 13.5);
-    return doc.output("blob");
-  }
-
-  var dl = document.getElementById("dl");
-  // Standalone version: save through a normal browser download.
-  var downloads = {
-    save: function (o) {
-      var url = URL.createObjectURL(o.data), a = document.createElement("a");
-      a.href = url; a.download = o.filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      return Promise.resolve({ status: "saved" });
-    }
-  };
-  dl.hidden = false;
-  function dlLabel(t, ms) { dl.textContent = t; if (ms) setTimeout(function () { dl.textContent = "Download PDF"; }, ms); }
-  dl.addEventListener("click", function () {
-    if (!downloads) return;
-    var blob;
-    try { blob = buildPdf(); } catch (e) { dlLabel("Could not build PDF", 2500); return; }
-    dl.disabled = true; dlLabel("Saving…");
-    var name = (clean(state.month).trim().replace(/[^A-Za-z0-9]+/g, "-") || "month") + "-habit-sleep-tracker.pdf";
-    downloads.save({ filename: name, data: blob }).then(function () {
-      dl.disabled = false; dlLabel("Saved", 2000);
-    }).catch(function (err) {
-      dl.disabled = false;
-      if (err && err.code === "declined") dlLabel("Download PDF"); else dlLabel("Could not save", 2500);
-    });
-  });
-
-  // Grey out days that do not exist in this month (for example 29 to 31 in November).
-  for (var off = DIM; off < D; off++) {
-    for (var ok = 0; ok < N; ok++) cellEls[ok + "-" + off].classList.add("off");
-    dayEls[off].classList.add("off");
-    var hs = table.querySelectorAll("thead th")[off + 1];
-    if (hs) hs.classList.add("off");
-    var sl = table.querySelectorAll('.slot[data-day="' + off + '"]');
-    for (var si = 0; si < sl.length; si++) sl[si].disabled = true;
-  }
-
-  // Leave the page open past midnight: reload on the new date so the month changes by itself.
-  var loadedDay = now.toDateString();
-  function checkDate() { if (new Date().toDateString() !== loadedDay) { save(); location.reload(); } }
-  setInterval(checkDate, 60000);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) checkDate(); });
-
-  render();
-})();
+    for
